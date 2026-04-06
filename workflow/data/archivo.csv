@@ -1,0 +1,12 @@
+Categoría (Fila),Q4 2025 (Oct-Dic),Q1 2026 (Ene-Mar),Q2 2026 (Abr-Jun),Q3 2026 (Jul-Sep),Comentarios Clave
+Site Assessment and Readiness,"Site assessment, Site readiness prep",Already known  Go/No Go (Feb),,,Evaluación inicial y preparación de sitios.
+Release Upgrade (TBD),Tech/Reg Rel. 1 Defect Resolution (Nov/Dic),,,,Actividades de soporte o actualización de la versión.
+Fit to Template (NTT/DeLaVal),"Prepare Template, NA RDL prep","Template tasks, Localization",,,Actividades de diseño y adecuación de la plantilla.
+Testing (NTT/DeLaVal),"Unit testing, SIT testing (Ene)","TST, UAT, Regression, Performance, SIT testing, Cutover Go/No Go (May)","Go Live Incl. MD (Jun), Hypercare",,Fases de prueba en ambientes DEV/TST/QAS.
+Training,,"Training strategy details, Enable US business/func value",,,Preparación y ejecución de la estrategia de formación.
+Data Migration,ETL 1: initial load (Oct/Nov),"ETL 2 (Dic/Ene), ETL 3 (Feb/Mar)",ETL 4: Go Live load incl. MD (Jun),,Cargas de datos en fases.
+Authorizations,Test roles in SIT1 (Nov/Dic),"Localization Roles, Test Roles",Test Roles,,Gestión y pruebas de perfiles de usuario.
+Cutover & Hyper care,Cutover preparation,Cutover execution (Jun),Hypercare,end of hypercare (Sep),Transición a producción y soporte intensivo inicial.
+System,"DEV, TST (Sep-Ene)",QAS (Ene-May),PRO (Jun en adelante),,"Ambientes utilizados: Desarrollo (DEV), Pruebas (TST), Aseguramiento de Calidad (QAS), Producción (PRO)."
+Transfer to support,,,Handover to AMS partner (Jun),,Transición de soporte al equipo de mantenimiento de aplicaciones.
+Template Release 2,Discovery & Prepare,Explore,Realize,,

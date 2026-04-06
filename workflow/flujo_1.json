@@ -1,0 +1,147 @@
+{
+  "name": "AI Multimodal UI Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ai/query",
+        "method": "POST",
+        "responseMode": "responseNode"
+      },
+      "name": "UI Input",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "query", "value": "={{ $json.query }}" },
+            { "name": "locale", "value": "={{ $json.locale || 'es-ES' }}" },
+            { "name": "output_format", "value": "json" },
+            { "name": "preferred_visualization", "value": "auto" }
+          ]
+        }
+      },
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "operation": "chat",
+        "systemMessage": "Eres un motor de an'e1lisis. Extrae intenci'f3n, entidades y si requiere datos externos. Devuelve SOLO JSON v'e1lido.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Consulta: {{ $json.query }}"
+          }
+        ]
+      },
+      "name": "Detect Intent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [620, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "REEMPLAZAR_CREDENCIAL",
+          "name": "OpenAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.needs_external_data }}",
+              "operation": "isTrue"
+            }
+          ]
+        }
+      },
+      "name": "Needs External Data?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://api.example.com/stocks/{{ $json.symbol }}",
+        "method": "GET",
+        "responseFormat": "json"
+      },
+      "name": "Fetch Stock Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [1060, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "const results = items[0].json.results || [];nconst labels = [];nconst values = [];nnresults.forEach(r => {n  labels.push(new Date(r.t).toLocaleString('es-ES', { month: 'long' }));n  values.push(r.c);n});nnreturn [{ json: { labels, values, unit: 'USD' } }];"
+      },
+      "name": "Transform Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [1260, 200]
+    },
+    {
+      "parameters": {
+        "operation": "chat",
+        "systemMessage": "Eres un generador de respuestas estructuradas para una UI web. Devuelve SOLO JSON v'e1lido.",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Datos:nLabels: {{ JSON.stringify($json.labels) }}nValores: {{ JSON.stringify($json.values) }}nnGenera:n1. Resumen en texton2. Especificaci'f3n del gr'e1fico"
+          }
+        ]
+      },
+      "name": "Generate Text & Chart Spec",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1460, 200],
+      "credentials": {
+        "openAiApi": {
+          "id": "REEMPLAZAR_CREDENCIAL",
+          "name": "OpenAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "mergeByPosition"
+      },
+      "name": "Merge Response",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [1660, 300]
+    },
+    {
+      "parameters": {
+        "responseBody": "={n  "text": $json.text_summary,n  "data": {n    "labels": $json.labels,n    "values": $json.values,n    "unit": "USD"n  },n  "visualization": $json.visualizationn}",
+        "responseCode": 200
+      },
+      "name": "Return to UI",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1860, 300]
+    }
+  ],
+  "connections": {
+    "UI Input": { "main": [[{ "node": "Normalize Input", "type": "main", "index": 0 }]] },
+    "Normalize Input": { "main": [[{ "node": "Detect Intent", "type": "main", "index": 0 }]] },
+    "Detect Intent": { "main": [[{ "node": "Needs External Data?", "type": "main", "index": 0 }]] },
+    "Needs External Data?": {
+      "main": [
+        [{ "node": "Fetch Stock Data", "type": "main", "index": 0 }],
+        []
+      ]
+    },
+    "Fetch Stock Data": { "main": [[{ "node": "Transform Data", "type": "main", "index": 0 }]] },
+    "Transform Data": { "main": [[{ "node": "Generate Text & Chart Spec", "type": "main", "index": 0 }]] },
+    "Generate Text & Chart Spec": { "main": [[{ "node": "Merge Response", "type": "main", "index": 0 }]] },
+    "Merge Response": { "main": [[{ "node": "Return to UI", "type": "main", "index": 0 }]] }
+  },
+  "active": false
+}

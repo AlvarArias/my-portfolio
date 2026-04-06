@@ -1,0 +1,147 @@
+{
+  "name": "Gantt CSV + Chat + Image",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "upload-csv",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook Upload CSV",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileFormat": "csv",
+        "binaryPropertyName": "file"
+      },
+      "name": "Read CSV",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [420, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => {n  return {n    json: {n      id: `${item.json.tarea}-${item.json.subtarea}`,n      label: `${item.json.tarea} / ${item.json.subtarea}`,n      start: new Date(item.json.inicio).getTime(),n      end: new Date(item.json.fin).getTime(),n      responsable: item.json.responsable,n      estado: item.json.estadon    }n  };n});"
+      },
+      "name": "Normalize Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {},
+      "name": "Store Dataset",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [860, 300]
+    },
+    {
+      "parameters": {
+        "path": "chat",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook Chat",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [200, 600]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "Eres un asistente que interpreta consultas sobre cartas Gantt. Devuelve filtros en JSON."
+          },
+          {
+            "role": "user",
+            "content": "={{$json.message}}"
+          }
+        ]
+      },
+      "name": "OpenAI Agent",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [420, 600],
+      "credentials": {
+        "openAiApi": {
+          "id": "OPENAI_CREDENTIAL_ID",
+          "name": "OpenAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const filtros = items[0].json;nconst data = $items('Normalize Data');nnconst result = data.filter(i => {n  if (filtros.responsable && i.json.responsable !== filtros.responsable) return false;n  return true;n});nnreturn result;"
+      },
+      "name": "Apply Filters",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [640, 600]
+    },
+    {
+      "parameters": {
+        "functionCode": "const tasks = items.map(i => ({n  x: [i.json.start, i.json.end],n  y: i.json.labeln}));nnreturn [{n  json: {n    chart: {n      type: 'bar',n      data: {n        datasets: [{n          label: 'Proyecto',n          data: tasks,n          backgroundColor: 'rgba(75, 192, 192, 0.6)'n        }]n      },n      options: {n        indexAxis: 'y',n        scales: {n          x: { type: 'time' }n        }n      }n    }n  }n}];"
+      },
+      "name": "Build Chart Config",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [860, 600]
+    },
+    {
+      "parameters": {
+        "url": "https://quickchart.io/chart",
+        "method": "POST",
+        "responseFormat": "json",
+        "jsonParameters": true,
+        "bodyParametersJson": "={{JSON.stringify($json)}}"
+      },
+      "name": "Generate Gantt Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 2,
+      "position": [1080, 600]
+    },
+    {
+      "parameters": {
+        "responseBody": "={{$json}}"
+      },
+      "name": "HTTP Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1300, 600]
+    }
+  ],
+  "connections": {
+    "Webhook Upload CSV": {
+      "main": [[{ "node": "Read CSV", "type": "main", "index": 0 }]]
+    },
+    "Read CSV": {
+      "main": [[{ "node": "Normalize Data", "type": "main", "index": 0 }]]
+    },
+    "Normalize Data": {
+      "main": [[{ "node": "Store Dataset", "type": "main", "index": 0 }]]
+    },
+    "Webhook Chat": {
+      "main": [[{ "node": "OpenAI Agent", "type": "main", "index": 0 }]]
+    },
+    "OpenAI Agent": {
+      "main": [[{ "node": "Apply Filters", "type": "main", "index": 0 }]]
+    },
+    "Apply Filters": {
+      "main": [[{ "node": "Build Chart Config", "type": "main", "index": 0 }]]
+    },
+    "Build Chart Config": {
+      "main": [[{ "node": "Generate Gantt Image", "type": "main", "index": 0 }]]
+    },
+    "Generate Gantt Image": {
+      "main": [[{ "node": "HTTP Response", "type": "main", "index": 0 }]]
+    }
+  }
+}
